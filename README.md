@@ -34,6 +34,7 @@ struct State {
 We will use Newton's gravity equation to simulate the physics:
 
 $$F = ma$$
+
 $$\vec{F}_{ij} = G \frac{m_i m_j}{\|\vec{r}_j - \vec{r}_i\|^2} \hat{r}_{ij}$$
 
 
@@ -83,8 +84,11 @@ void derivs(State& s) {
 When it comes to simulating orbits, we need a numerical solver that can preserve the Hamiltonian for a long period of time. The Velocity Verlet is a perfect choice for this as it is a symplectic integrator, which means it preserved energy for long-term stability.
 
 $$\vec{r}(t + \Delta t) = \vec{r}(t) + \vec{v}(t)\Delta t + \frac{1}{2}\vec{a}(t)\Delta t^2$$
+
 $$\vec{v}(t + \frac{1}{2}\Delta t) = \vec{v}(t) + \frac{1}{2}\vec{a}(t)\Delta t$$
+
 $$\vec{a}(t + \Delta t) = \vec{A}(\vec{r}_1, \vec{r}_2, \vec{r}_3)$$
+
 $$\vec{v}(t + \Delta t) = \vec{v}(t + \frac{1}{2}\Delta t) + \frac{1}{2}\vec{a}(t + \Delta t)\Delta t$$
 
 Since the fourth step to calculate the velocity requires the half-step of the velocity (which is the second step of the integration), we simply merge them, so we get:
