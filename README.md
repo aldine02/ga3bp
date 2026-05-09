@@ -160,7 +160,9 @@ int main() {
 
 ### Fitness Function
 The algorithm will start by generating a bunch of random initial conditions for each generation based on the population number. For each individual, the physics simulator will be computed to calculate its orbit. After a certain time period ($T$), the fitness function will calculate the Euclidian distance given by:
+
 $$d = \sqrt{\sum_{i=1}^{3} (x_T - x_0)^2 + (y_T - y_0)^2}\$$
+
 to calculate how much it deviates away from the origin. This way the GA will look for initial conditions of a three-body system where each bodies return to its initial position after the given time period.
 
 ```c++
@@ -173,9 +175,11 @@ inline double euclidian(const State& initial, const State& final) {
 ```
 
 This alone has a problem, a body can get ejected out of orbit and be at the position of $\vec{r_0} = \vec{r_T}$, and the GA will think it is a stable orbit. To avoid that, we give a maximum value ($R_{max}$) of the euclidian distance allowed:
+
 $$\max(|\vec{r}_1(T)|, |\vec{r}2(T)|, |\vec{r}3(T)|) ≯  R_{max} $$
 
 Finally, we have to make sure that the GA doesn't just make the bodies orbit each other at an extremely close distance. We give a minimum value ($R_{min}$) of how close are the permitted distance between each bodies: 
+
 $$d_{12}, d_{13}, d_{23} ≮  R_{min} $$
 
 The error we return should be negative since the GA library we use maximizes by default: 
