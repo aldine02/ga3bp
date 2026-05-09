@@ -43,15 +43,19 @@ $$\vec{a}_i = \sum_{j \neq i} \frac{m_j (\vec{r}_j - \vec{r}_i)}{\|\vec{r}_j - \
 
 
 Then, we decompose the vectors into scalars, and add a softening factor ($\epsilon$) to avoid infinite acceleration at near zero distance encounter.
+
 $$r_{ij}^2 = (x_j - x_i)^2 + (y_j - y_i)^2 + \epsilon$$
+
 $$r_{ij} = \sqrt{r_{ij}^2}$$
 
 Therefore, acceleration of body $i$ caused by body $j$ is:
+
 $$\vec{a_i} = \vec{a_i} + \left( \frac{m_j}{r_{ij}^2} \right) \left( \frac{\vec{r_j} - \vec{x_i}}{r_{ij}} \right)$$
 
-
 Conversely, the acceleration of body $j$ caused by body $i$ is the opposite due to Newton's third law of motion:
+
 $$F_{ij} = -F_{ji}$$
+
 $$\vec{a_j} = \vec{a_j} - \left( \frac{m_j}{r_{ij}^2} \right) \left( \frac{\vec{r_j} - \vec{x_i}}{r_{ij}} \right)$$
 
 ```c++
@@ -236,14 +240,21 @@ Notice that the initial line does not merge with the final line, and is guarante
 
 ### Barycentric Reduction
 Most three-star system are organized in a hierarcial system due to its nature to preserve momentum and the center of mass. Let's look at it further by applying a barycentric reduction and defining constraint for the GA to the system's center of mass:
+
 $$\frac{m_1\vec{r_1} + m_2\vec{r_2} + m_3\vec{r_3}}{\vec{r_1}+\vec{r_2}+\vec{r_3}} = 0$$
+
 since all bodies have the same mass,
+
 $$\vec{r_1} + \vec{r_2} + \vec{r_3} = 0$$
+
 $$\vec{r_3} = -(\vec{r_1} + \vec{r_2})$$
 
 Then, we conserve the momentum:
+
 $$m_1\vec{v_1} + m_2\vec{v_2} + m_3\vec{v_3} = 0$$
+
 $$\vec{v_1} + \vec{v_2} + \vec{v_3} = 0$$
+
 $$\vec{v_3} = -(\vec{v_1} + \vec{v_2})$$
 
 By constraining $r_3$ and $v_3$, we reduce the GA degree of freedom to 8.
@@ -280,10 +291,15 @@ The result is a smooth hierarcial star system with a converged -0.01358 error in
 Most three-star systems aren't symmetric. If we want to search for a symmetric orbit, we have to put a constraint that mirrors the orbit at $t=0$. We do this by constraining the GA to only look for one body's position and velocity, and the other two followed its configuration at a different angle.
 
 Here, I have the GA only configure one body, and have the other gets the same configuration but rotated along the initial position axis. One body would get rotated 120° and the other 240°:
+
 $$\theta_2 = \frac{2\pi}{3}, \quad \theta_3 = \frac{4\pi}{3}$$
+
 $$x_2 = x_1 \cos(\theta_2) - y_1 \sin(\theta_2), \quad y_2 = x_1 \sin(\theta_2) + y_1 \cos(\theta_2)$$
+
 $$v_{x2} = v_{x1} \cos(\theta_2) - v_{y1} \sin(\theta_2), \quad v_{y2} = v_{x1} \sin(\theta_2) + v_{y1} \cos(\theta_2)$$
+
 $$x_3 = x_1 \cos(\theta_3) - y_1 \sin(\theta_3), \quad y_3 = x_1 \sin(\theta_3) + y_1 \cos(\theta_3)$$
+
 $$vx_3 = v_{x1} \cos(\theta_3) - v_{y1} \sin(\theta_3), \quad v_{y3} = v_{x1} \sin(\theta_3) + v_{y1} \cos(\theta_3)$$
 
 This would reduce the GA degree of freedom to only 4, which are only one body's initial state.
