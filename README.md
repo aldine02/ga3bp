@@ -128,7 +128,7 @@ void verlet(State& s, double T, double dt){
 ### Genetic Algorithm
 I will be using a pre-made library [GALGO 2.0](https://github.com/olmallet81/GALGO-2.0) by *Olivier Mallet* to handle the GA. It is a simple yet powerful GA library with available parallelization using OpenMP.
 
-For simplicity, the default GA configuration from the library would be used except for the mutation rate, which I would vary between $0.5$-$20$%. Population size is $500$, and the number of generations is $5000$ to give more time for the search.
+For simplicity, the default GA configuration from the library would be used except for the mutation rate, which I would vary between $0.5$-$20\%$. Population size is $500$, and the number of generations is $5000$ to give more time for the search.
 
 ```c++
 #include "Galgo.hpp"
@@ -350,7 +350,7 @@ The result is a beautifully converged -0.00011 error in distance.
 The GA balance the centrifugal force againts gravity. The surviving orbits are perfect, periodic rings. 
 
 ### Collinear Symmetry
-If we took this symmetric constraint further, we can enforce a collinear configuration at $t=0$. In this configuration, the y coordinates of all bodies are set in one line.
+If we took this symmetric constraint further, we can enforce a collinear configuration at $t=0$. In this configuration, the $y$ coordinates of all bodies are set in one line.
 
 $$y_1 = y_2 = y_3 = 0$$
 
