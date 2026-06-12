@@ -1,23 +1,22 @@
 # Genetic Algorithm for Periodic Solutions in the Three-Body Problem
 
 ## Intro
-I was reading Liu Cixin's The Three-Body Problem when I came accross the chapter where the character Wei Cheng talks about using the nature of random numbers to solve the three-body problem. 
+I was reading Liu Cixin's The Three-Body Problem when I came across the chapter where the character Wei Cheng talks about using the nature of random numbers to solve the three-body problem. 
 
 >*it shows how, mathematically, random brute force can overcome precise logic ... This is my strategy for solving the three-body problem ... I treat each combination like a life form ... The computation proceeds by eliminating the disadvantaged and preserving the advantaged.*
 >
 >"It's an evolutionary algorithm," Wang Miao said.
 
-Although the implication is different, it made me think about the application of Genetic Algorithm (GA) to search for periodic orbits of a three-star system.
+Although the implication is different, it made me think about the application of the Genetic Algorithm (GA) to search for periodic orbits of a three-star system.
 
-I used GA for my thesis during my undergraduate study in mechanical engineering. Although I used it to optimize the configuration for a low-head hydroturbine to maximize efficiency, the same approach could be used.
+I used GA for my thesis during my undergraduate studies in mechanical engineering. Although I used it to optimize the configuration for a low-head hydroturbine to maximize efficiency, the same approach could be used.
 
-Unsurprisingly, this approach has been done many times. However, existing research often targets a specific orbital family to understand each of the orbits better. My goal was to play and explore the use of GA with varying symmetry myself.
 
 ## The Approach
 I will be using C++ due to its vectorization and parallel ability with C speed, since the computation would take millions of iteration steps. Python will be used to plot using Matplotlib. Build instructions are available [here](src/README.md).
 
 
-To simplify the search space, I will constraint the system to a 2D plane and assume equal mass for all bodies. The model is structured by: 
+To simplify the search space, I will constrain the system to a 2D plane and assume equal mass for all bodies. The model is structured by: 
 
 ```c++
 struct Body {
@@ -43,7 +42,7 @@ For a three-body system, and G is normalized for simplicity, the acceleration ca
 $$\vec{a}_i = \sum_{j \neq i} \frac{m_j (\vec{r}_j - \vec{r}_i)}{\|\vec{r}_j - \vec{r}_i\|^3}$$
 
 
-Then, we decompose the vectors into scalars, and add a softening factor ($\epsilon$) to avoid infinite acceleration at near zero distance encounter.
+Then, we decompose the vectors into scalars and add a softening factor ($\epsilon$) to avoid infinite acceleration at near zero distance encounters.
 
 $$r_{ij}^2 = (x_j - x_i)^2 + (y_j - y_i)^2 + \epsilon$$
 
@@ -61,7 +60,7 @@ $$\vec{a_j} = \vec{a_j} - \left( \frac{m_j}{r_{ij}^2} \right) \left( \frac{\vec{
 
 
 ### Numerical Method
-When it comes to simulating orbits, we need a numerical solver that can preserve the Hamiltonian for a long period of time. The Velocity Verlet is a perfect choice for this as it is a symplectic integrator, which means it preserved energy for long-term stability.
+When it comes to simulating orbits, we need a numerical solver that can preserve the Hamiltonian for a long period of time. The Velocity Verlet is a perfect choice for this as it is a symplectic integrator, which means it preserves energy for long-term stability.
 
 $$\vec{r}(t + \Delta t) = \vec{r}(t) + \vec{v}(t)\Delta t + \frac{1}{2}\vec{a}(t)\Delta t^2$$
 
@@ -87,23 +86,23 @@ For simplicity, the default GA configuration from the library would be used exce
 
 
 ### Fitness Function
-The algorithm will start by generating a bunch of random initial conditions for each generation based on the population number. For each individual, the physics simulator will be computed to calculate its orbit. After a certain time period ($T$), the fitness function will calculate the Euclidian distance given by:
+The algorithm will start by generating a bunch of random initial conditions for each generation based on the population size. For each individual, the physics simulator will be used to calculate their orbit. After a certain time period ($T$), the fitness function will calculate the Euclidean distance given by:
 
 $$d = \sqrt{\sum_{i=1}^{3} (x_T - x_0)^2 + (y_T - y_0)^2}\$$
 
-to calculate how much it deviates away from the origin. This way the GA will look for initial conditions of a three-body system where each bodies return to its initial position after the given time period. However, This alone has a problem, a body can get ejected out of orbit and be at the position of $\vec{r_0} = \vec{r_T}$, and the GA will think it is a stable orbit. To avoid that, we give a maximum value ($R_{max}$) of the euclidian distance allowed:
+to calculate how much it deviates from the origin. This way, the GA will look for initial conditions of a three-body system where each body returns to its initial position after the given time period. However, this alone has a problem, a body can get ejected out of orbit and be at the position of $\vec{r_0} = \vec{r_T}$, and the GA will think it is a stable orbit. To avoid that, we give a maximum value ($R_{max}$) of the euclidian distance allowed:
 
 $$\max(|\vec{r}_1(T)|, |\vec{r}2(T)|, |\vec{r}3(T)|) ≯  R_{max} $$
 
-Finally, we have to make sure that the GA doesn't just make the bodies orbit each other at an extremely close distance. We give a minimum value ($R_{min}$) of how close are the permitted distance between each bodies: 
+Finally, we have to make sure that the GA doesn't just make the bodies orbit each other at an extremely close distance. We give a minimum value ($R_{min}$) of how close the permitted distance between each bodies: 
 
 $$d_{12}, d_{13}, d_{23} ≮  R_{min} $$
 
 The error we return should be negative since the GA library we use maximizes by default.
 
-## Results
+## Results 
 ### Unconstrained Search
-First, let's run the GA without any constraint, meaning the GA have 12 degree of freedom for all three bodies starting position and velocity. 
+First, let's run the GA without any constraint, meaning the GA has 12 degrees of freedom for all three bodies' starting position and velocity. 
 
 ```c++
 s.b1.x = x[0]; s.b1.y = x[1];
@@ -129,14 +128,14 @@ Output:
 ```
 It converged to -0.29280 error distance to the initial position, which is quite high.
 
-The result is a rough drifting hierarchiecal system.
+The result is a rough, drifting hierarchical system.
 
 ![](results/unconstrained.gif)
 
-Notice that the initial line does not merge with the final line, and is guaranteed to drift if we simulate any further. However, it is satisfying to see that without no constraint, a truly random search gives out the most efficient orbit on which most three-star system are organized in.
+Notice that the initial line does not merge with the final line, and is guaranteed to drift if we simulate any further. However, it is satisfying to see that without any constraint, a truly random search gives out the most efficient orbit on which most three-star systems are organized.
 
 ### Barycentric Reduction
-Most three-star system are organized in a hierarcial system due to its nature to preserve momentum and the center of mass. Let's look at it further by applying a barycentric reduction and defining constraint for the GA to the system's center of mass:
+Most three-star systems are organized in a hierarchical system due to their nature to preserve momentum and the center of mass. Let's look at it further by applying a barycentric reduction and defining a constraint for the GA to the system's center of mass:
 
 $$\frac{m_1\vec{r_1} + m_2\vec{r_2} + m_3\vec{r_3}}{\vec{r_1}+\vec{r_2}+\vec{r_3}} = 0$$
 
@@ -181,14 +180,14 @@ Output:
 
 ```
 
-The result is a smooth hierarcial star system with a converged -0.01358 error in distance.
+The result is a smooth hierarchical star system with a converged -0.01358 error in distance.
 
 ![](results/barycentric.gif)
 
 ### Rotational Symmetry
 Most three-star systems aren't symmetric. If we want to search for a symmetric orbit, we have to put a constraint that mirrors the orbit at $t=0$. We do this by constraining the GA to only look for one body's position and velocity, and the other two followed its configuration at a different angle.
 
-Here, I have the GA only configure one body, and have the other gets the same configuration but rotated along the initial position axis. One body would get rotated 120° and the other 240°:
+Here, I have the GA only configure one body, and have the other get the same configuration but rotated along the initial position axis. One body would get rotated 120° and the other 240°:
 
 $$\theta_2 = \frac{2\pi}{3}, \quad \theta_3 = \frac{4\pi}{3}$$
 
@@ -238,10 +237,10 @@ Output:
 The result is a beautifully converged -0.00011 error in distance.   
 ![](results/rotational.gif)
 
-The GA balance the centrifugal force againts gravity. The surviving orbits are perfect, periodic rings. 
+The GA balances the centrifugal force against gravity. The surviving orbits are perfect, periodic rings. 
 
 ### Collinear Symmetry
-If we took this symmetric constraint further, we can enforce a collinear configuration at $t=0$. In this configuration, the $y$ coordinates of all bodies are set in one line.
+If we took this symmetric constraint further, we could enforce a collinear configuration at $t=0$. In this configuration, the $y$ coordinates of all bodies are set in one line.
 
 $$y_1 = y_2 = y_3 = 0$$
 
@@ -289,4 +288,5 @@ And we get the famous figure-eight orbit for the three-body problem discovered b
 ![](results/collinear.gif)
 
 ## Final Note
-These are only some examples of how GA can be used to optimized constrained system within the three-body problem. Current method to search for periodic families of orbits used more advanced methods such as topological tools with high-performance computing. However, the fact that giving constraints to random searches can lead to beautiful symmetries and replicate previously known orbits is astonishing. This exploration using an evolutionary algorithm shows how random numbers can lead us to finding order in chaos.  
+I had a lot of fun making this project. The program ran smoothly, considering it executed 5000 3-body simulations, and was done within a minute on a potato laptop, thanks to the parallelization. 
+These are only some examples of how GA can be used to optimize constrained systems within the three-body problem. The current method to search for periodic families of orbits uses more advanced methods, such as topological tools with high-performance computing. However, the fact that giving constraints to random searches can lead to beautiful symmetries and replicate previously known orbits is astonishing. This exploration using an evolutionary algorithm shows how random numbers can lead us to finding order in chaos.  
