@@ -59,26 +59,6 @@ $$F_{ij} = -F_{ji}$$
 
 $$\vec{a_j} = \vec{a_j} - \left( \frac{m_j}{r_{ij}^2} \right) \left( \frac{\vec{r_j} - \vec{x_i}}{r_{ij}} \right)$$
 
-```c++
-void derivs(State& s) {
-    const double epsilon = 0.0001;
-
-    // body 1 and body 2
-    double dx12 = s.b2.x - s.b1.x;
-    double dy12 = s.b2.y - s.b1.y;
-    double r2_12 = (dx12 * dx12) + (dy12 * dy12) + epsilon;
-    double r_12 = std::sqrt(r2_12);
-
-    s.b1.ax += (s.b2.mass / r2_12) * (dx12 / r_12);
-    s.b1.ay += (s.b2.mass / r2_12) * (dy12 / r_12);
-
-    s.b2.ax -= (s.b1.mass / r2_12) * (dx12 / r_12);
-    s.b2.ay -= (s.b1.mass / r2_12) * (dy12 / r_12);
-
-    // same goes for the rest ..
-}
-```
-
 
 ### Numerical Method
 When it comes to simulating orbits, we need a numerical solver that can preserve the Hamiltonian for a long period of time. The Velocity Verlet is a perfect choice for this as it is a symplectic integrator, which means it preserved energy for long-term stability.
@@ -99,86 +79,19 @@ $$\vec{a_{new}} = \vec{A}(\vec{r}_1, \vec{r}_2, \vec{r}_3)$$
 
 $$\vec{v} = \vec{v} + \frac{1}{2}(\vec{a_{old}} + \vec{a_{new}}) \Delta t$$
 
-```c++
-void verlet(State& s, double T, double dt){
-    // Solve position (full-step)
-    s.b1.x += s.b1.vx * dt + 0.5 * s.b1.ax * dt * dt;
-    s.b1.y += s.b1.vy * dt + 0.5 * s.b1.ay * dt * dt;
-    s.b2.x += s.b2.vx * dt + 0.5 * s.b2.ax * dt * dt;
-    s.b2.y += s.b2.vy * dt + 0.5 * s.b2.ay * dt * dt;
-    s.b3.x += s.b3.vx * dt + 0.5 * s.b3.ax * dt * dt;
-    s.b3.y += s.b3.vy * dt + 0.5 * s.b3.ay * dt * dt;
-
-    // Save old acceleration
-    State old = s;
-
-    // Derive new acceleration
-    derivs(s);
-        
-    // Solve velocity
-    s.b1.vx += 0.5 * (old.b1.ax + s.b1.ax) * dt;
-    s.b1.vy += 0.5 * (old.b1.ax + s.b1.ay) * dt;
-    s.b2.vx += 0.5 * (old.b1.ax + s.b2.ax) * dt;
-    s.b2.vy += 0.5 * (old.b1.ax + s.b2.ay) * dt;
-    s.b3.vx += 0.5 * (old.b1.ax + s.b3.ax) * dt;
-    s.b3.vy += 0.5 * (old.b1.ax + s.b3.ay) * dt;
-}
-```
 
 ### Genetic Algorithm
-I will be using a pre-made library [GALGO 2.0](https://github.com/olmallet81/GALGO-2.0) by *Olivier Mallet* to handle the GA. It is a simple yet powerful GA library with available parallelization using OpenMP.
+I will be using a pre-made library [GALGO 2.0](https://github.com/olmallet81/GALGO-2.0) by *Olivier Mallet* to handle the GA. It is a powerful GA library with available parallelization using OpenMP.
 
 For simplicity, the default GA configuration from the library would be used except for the mutation rate, which I would vary between 0.5-20%. Population size is $500$, and the number of generations is $5000$ to give more time for the search.
 
-```c++
-#include "Galgo.hpp"
-
-template <typename T>
-class ThreeBody {
-public:
-    static std::vector<T> Objective(const std::vector<T>& x) {
-        State s;
-
-        // Constraint here ...
-
-        State initial = s;
-
-        verlet(s, 10, 0.001); // integration
-        double error = fitness(initial, s); // fitness calculation
-        return {error};
-}
-};
-
-int main() {
-
-    // parameters here (based on constraint) ..
-
-    galgo::GeneticAlgorithm<double> ga(ThreeBody<double>::Objective, 500, 5000, true, 
-                                    // parameters here ..);
-    
-    ga.mutrate = 0.2;
-    ga.run();
-
-    return 0;
-```
 
 ### Fitness Function
 The algorithm will start by generating a bunch of random initial conditions for each generation based on the population number. For each individual, the physics simulator will be computed to calculate its orbit. After a certain time period ($T$), the fitness function will calculate the Euclidian distance given by:
 
 $$d = \sqrt{\sum_{i=1}^{3} (x_T - x_0)^2 + (y_T - y_0)^2}\$$
 
-to calculate how much it deviates away from the origin. This way the GA will look for initial conditions of a three-body system where each bodies return to its initial position after the given time period.
-
-```c++
-inline double euclidian(const State& initial, const State& final) {
-    double d1 = std::pow(final.b1.x - initial.b1.x, 2) + std::pow(final.b1.y - initial.b1.y, 2);
-    double d2 = std::pow(final.b2.x - initial.b2.x, 2) + std::pow(final.b2.y - initial.b2.y, 2);
-    double d3 = std::pow(final.b3.x - initial.b3.x, 2) + std::pow(final.b3.y - initial.b3.y, 2);
-    
-    return std::sqrt(d1 + d2 + d3);
-```
-
-This alone has a problem, a body can get ejected out of orbit and be at the position of $\vec{r_0} = \vec{r_T}$, and the GA will think it is a stable orbit. To avoid that, we give a maximum value ($R_{max}$) of the euclidian distance allowed:
+to calculate how much it deviates away from the origin. This way the GA will look for initial conditions of a three-body system where each bodies return to its initial position after the given time period. However, This alone has a problem, a body can get ejected out of orbit and be at the position of $\vec{r_0} = \vec{r_T}$, and the GA will think it is a stable orbit. To avoid that, we give a maximum value ($R_{max}$) of the euclidian distance allowed:
 
 $$\max(|\vec{r}_1(T)|, |\vec{r}2(T)|, |\vec{r}3(T)|) ≯  R_{max} $$
 
@@ -186,32 +99,7 @@ Finally, we have to make sure that the GA doesn't just make the bodies orbit eac
 
 $$d_{12}, d_{13}, d_{23} ≮  R_{min} $$
 
-The error we return should be negative since the GA library we use maximizes by default: 
-
-```c++
-inline double fitness(const State& initial, const State& final) {
-    // ejection Check
-    double max_dist = std::max({
-        std::sqrt(final.b1.x*final.b1.x + final.b1.y*final.b1.y),
-        std::sqrt(final.b2.x*final.b2.x + final.b2.y*final.b2.y),
-        std::sqrt(final.b3.x*final.b3.x + final.b3.y*final.b3.y)
-    });
-    if (max_dist > 4.0) return -9999.0;
-
-    // proximity Check
-    double d12 = std::sqrt(std::pow(final.b2.x - final.b1.x, 2) + std::pow(final.b2.y - final.b1.y, 2));
-    double d13 = std::sqrt(std::pow(final.b3.x - final.b1.x, 2) + std::pow(final.b3.y - final.b1.y, 2));
-    double d23 = std::sqrt(std::pow(final.b3.x - final.b2.x, 2) + std::pow(final.b3.y - final.b2.y, 2));
-    if (d12 < 0.2 || d13 < 0.2 || d23 < 0.2) return -8888.0;
-
-    double error = euclidian(initial, final);
-
-    // NaN / Inf check
-    if (std::isnan(error) || std::isinf(error)) return -7777.0;
-
-    return -error; 
-}
-```
+The error we return should be negative since the GA library we use maximizes by default.
 
 ## Results
 ### Unconstrained Search
@@ -228,6 +116,7 @@ s.b3.x = x[8]; s.b3.y = x[9];
 s.b3.vx = x[10]; s.b3.vy = x[11];
 ```
 
+Output:
 ```
  Running Genetic Algorithm...
  ----------------------------
@@ -280,6 +169,7 @@ s.b3.vx = -(s.b1.vx + s.b2.vx);
 s.b3.vy = -(s.b1.vy + s.b2.vy);
 ```
 
+Output:
 ```
  Running Genetic Algorithm...
  ----------------------------
@@ -333,6 +223,7 @@ s.b3.vx = s.b1.vx * cos(a240) - s.b1.vy * sin(a240);
 s.b3.vy = s.b1.vx * sin(a240) + s.b1.vy * cos(a240);
 ```
 
+Output:
 ```
  Running Genetic Algorithm...
  ----------------------------
@@ -383,6 +274,7 @@ s.b3.vx = -2.0 * s.b1.vx;
 s.b3.vy = -2.0 * s.b1.vy;
 ```
 
+Output:
 ```
  Running Genetic Algorithm...
  ----------------------------
