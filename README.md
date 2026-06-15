@@ -288,5 +288,8 @@ And we get the famous figure-eight orbit for the three-body problem discovered b
 ![](results/collinear.gif)
 
 ## Final Note
-I had a lot of fun making this project. The program ran smoothly, considering it executed 5000 3-body simulations, and was done within a minute on a potato laptop, thanks to the parallelization. 
+I had a lot of fun making this project. The program ran smoothly, considering it executed 2.5 million 3-body simulations, and was done under 5 minute on a potato laptop, thanks to the parallelization. 
+
+<img src="docs/time.png" width="200">
+
 These are only some examples of how GA can be used to optimize constrained systems within the three-body problem. The current method to search for periodic families of orbits uses more advanced methods, such as topological tools with high-performance computing. However, the fact that giving constraints to random searches can lead to beautiful symmetries and replicate previously known orbits is astonishing. This exploration using an evolutionary algorithm shows how random numbers can lead us to finding order in chaos.  
